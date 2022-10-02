@@ -44,4 +44,9 @@ com.chapter2.Demo2
 ##### 案例二：将文件输出到控制台
 com.chapter2.Demo3
 
+### Buffer的分散与聚合
+scattering：将数据写入到buffer时，采用buffer数组，一个buffer写满，写到另一个buffer
+gathering：从buffer读取数据时，采用buffer数组，依次读
+
+
 

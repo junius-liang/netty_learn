@@ -40,4 +40,91 @@
 1. 如果没有客户端来建立连接，服务器会阻塞
 2. 如果客户端没有输入，服务器也会阻塞。
 
+### Java nio
+客户端->buffer->channel->selector->server
+
+通俗理解：NIO是可以做到用一个线程来处理多个操作的。假设有10000个请求过来,根据实际情况，可以分配50或者100个线程来处理。不像之前的阻塞IO那样，非得分配10000个。
+
+### Selector、Channel、Buffer的关系
+1. 一个Channel对应一个Buffer
+2. Selector对应一个线程，一个线程对应多个channel
+3. 程序切换到哪个channel是由时间决定的
+4. Selector根据不同事件在各个通道上切换
+5. Buffer是一个内存块，底层是数组
+6. Buffer读写切换要flip
+
+### Buffer
+##### Buffer使用
+Buffer有多个类型：IntBuffer、DoubleBuffer等八大数据类型（布尔类型没有）
+构造函数 IntBuffer.allocate(size) 可以存放5个int
+存放方法 put()
+容量 capacity()
+读写切换 flip()
+判断buffer是否还有内容 hasRemaining()
+获取数据 get()
+
+案例：com.chapter2.Demo1
+
+##### Buffer的参数讲解
+```
+  private int mark = -1; //标记
+  private int position = 0; //标记被读写的元素的索引
+  private int limit; //缓冲区的当前终点
+  private int capacity; //容量，被设定不可改变
+```
+### Channel
+Channel有多种实现类：FileChannel、DatagramChannel、SocketChannel、ServerSocketChannel
+
+FileChannel：read(ByteBuffer a) 从channel读取数据放到buffer
+write(ByteBuffer b) 把buffer的数据写到channnel
+transferFrom 从目标通道复制数据到当前通道
+transferTo 从当前通道复制数据到目标通道
+
+##### 案例一：将字符串写到文件中
+com.chapter2.Demo2
+
+##### 案例二：将文件输出到控制台
+com.chapter2.Demo3
+
+
+### Selector
+##### 基本介绍
+Java 的 NIO，用非阻塞的 IO 方式。可以用一个线程，处理多个的客户端连接，就会使用到Selector(选择器)
+
+Selector能够检测多个注册的通道上是否有事件发生(注意:多个Channel以事件的方式可以注册到同一个Selector)，如果有事件发生，便获取事件然后针对每个事件进行相应的处理。这样就可以只用一个单线程去管理多个通道，也就是管理多个连接和请求。
+
+只有在 连接/通道 真正有读写事件发生时，才会进行读写，就大大地减少了系统开销，并且不必为每个连接都创建一个线程，不用去维护多个线程
+
+避免了多线程之间的上下文切换导致的开销
+
+##### Selector特点说明
+Netty的IO线程NioEventLoop聚合了Selector（选择器，也叫多路复用器），可以同时并发处理成百上千个客户端连接。
+
+当线程从某客户端 Socket 通道进行读写数据时，若没有数据可用时，该线程可以进行其他任务。
+
+线程通常将非阻塞 IO 的空闲时间用于在其他通道上执行 IO 操作，所以单独的线程可以管理多个输入和输出通道。
+
+由于读写操作都是非阻塞的，这就可以充分提升 IO 线程的运行效率，避免由于频繁I/O 阻塞导致的线程挂起。
+
+一个 I/O 线程可以并发处理 N 个客户端连接和读写操作，这从根本上解决了传统同步阻塞 I/O 一连接一线程模型，架构的性能、弹性伸缩能力和可靠性都得到了极大的提升。
+
+##### 如何工作？
+1、 当客户端连接时，可以通过ServerSocketChannel得到SocketChannel。
+
+2、可以通过register(Selector sel, int ops)，将SocketChannel注册到Selector上，并且一个selector上可以注册多个SocketChannel。
+
+3、注册之后会得到SelectionKey，会与该Selector进行关联。
+
+4、Selector进行监听select方法，并且返回有事件发生的通道的个数。并且进一步得到有事件发生的SelectionKey
+
+5、通过SelectorKey的channel()方法，反向获取SocketChannel。
+
+6、上一步可以得到Channel，然后完成业务的处理。
+
+![](./images/4.png)
+
+##### api
+
+
+
 
